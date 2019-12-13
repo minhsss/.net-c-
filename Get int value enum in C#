@@ -1,0 +1,12 @@
+https://stackoverflow.com/questions/943398/get-int-value-from-enum-in-c-sharp
+
+public enum Question
+{
+    Role = 2,
+    ProjectFunding = 3,
+    TotalEmployee = 4,
+    NumberOfServers = 5,
+    TopBusinessConcern = 6
+}
+
+int something = (int) Question.Role;
