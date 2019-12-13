@@ -1,0 +1,23 @@
+public enum Foos
+{
+    A,
+    B,
+    C
+}
+
+Yes you can use the GetValues method:
+
+var values = Enum.GetValues(typeof(Foos));
+Or the typed version:
+
+var values = Enum.GetValues(typeof(Foos)).Cast<Foos>();
+I long ago added a helper function to my private library for just such an occasion:
+
+public static class EnumUtil {
+    public static IEnumerable<T> GetValues<T>() {
+        return Enum.GetValues(typeof(T)).Cast<T>();
+    }
+}
+Usage:
+
+var values = EnumUtil.GetValues<Foos>();
