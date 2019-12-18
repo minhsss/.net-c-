@@ -1,0 +1,100 @@
+https://stackify.com/restsharp/
+var client = new RestClient("http://example.com");
+// client.Authenticator = new HttpBasicAuthenticator(username, password);
+
+var request = new RestRequest("resource/{id}", Method.POST);
+request.AddParameter("name", "value"); // adds to POST or URL querystring based on Method
+request.AddUrlSegment("id", "123"); // replaces matching token in request.Resource
+
+// easily add HTTP Headers
+request.AddHeader("header", "value");
+
+// add files to upload (works with compatible verbs)
+request.AddFile(path);
+
+// execute the request
+IRestResponse response = client.Execute(request);
+var content = response.Content; // raw content as string
+
+// or automatically deserialize result
+// return content type is sniffed but can be explicitly set via RestClient.AddHandler();
+RestResponse<Person> response2 = client.Execute<Person>(request);
+var name = response2.Data.Name;
+
+// easy async support
+client.ExecuteAsync(request, response => {
+    Console.WriteLine(response.Content);
+});
+
+// async with deserialization
+var asyncHandle = client.ExecuteAsync<Person>(request, response => {
+    Console.WriteLine(response.Data.Name);
+});
+
+// abort the request on demand
+asyncHandle.Abort();
+
+RestSharp là một trong những thư viện tốt nhất để sử dụng nếu bạn thường xuyên sử dụng REST để sử dụng API HTTP trong DotNet
+REST hoặc SOAP thường được sử dụng để giao tiếp với dữ liệu ngoài.
+
+Tính năng RestSharp
+Tùy chỉnh tuần tự hóa và giải tuần tự hóa thông qua ISerializer và IDeserializer. 
+Cả hai yêu cầu đồng bộ và không đồng bộ 
+Phân tích cú pháp XML và JSON tự động, bao gồm khớp tên phần tử mờ ("Product_id" trong XML / JSON sẽ khớp với thuộc tính C # có tên 'ProductId') 
+Tải lên tệp / biểu mẫu nhiều phần tử 
+oAuth 1, oAuth 2, Basic, NTLM và Xác thực dựa trên tham số
+Hỗ trợ cho các tính năng như GET, PUT, Head, POST, DELETE và OPTIONS
+
+Yêu cầu xử lý
+Using RestRequest sẽ tạo một yêu cầu mới tới một URL được chỉ định.
+AddParameter sẽ thêm một tham số mới vào yêu cầu.
+Tiêu đề HTTP có thể dễ dàng được thêm vào yêu cầu bạn đã tạo bằng cách sử dụng request.AddHeader
+Bạn có thể thay thế mã thông báo trong yêu cầu bằng cách sử dụng request.AddUrlSegment. Điều này sẽ thay thế mã thông báo phù hợp trong yêu cầu
+Để thực hiện yêu cầu, lệnh client.Execute (request) được sử dụng. Đối tượng phản hồi cũng có thể được sử dụng để phân tích dữ liệu của bạn.
+
+Tuần tự hóa
+Tuần tự hóa và giải tuần tự hóa trong Java với ví dụ. https://www.geeksforgeeks.org/serialization-in-java/
+Tuần tự hóa là một cơ chế chuyển đổi trạng thái của một đối tượng thành một luồng byte. 
+Deserialization là quá trình ngược lại trong đó luồng byte được sử dụng để tạo lại đối tượng Java thực tế trong bộ nhớ. 
+Cơ chế này được sử dụng để duy trì đối tượng.
+RestSharp chứa các trình khử tuần tự sẵn có hỗ trợ XML và JSON. 
+Trình giải tuần tự chính xác được RestSharp chọn, dựa trên loại nội dung được máy chủ trả về.
+
+RestSharp supports:
+                  application/json – JsonDeserializer
+                  application/xml – XmlDeserializer
+                  text/json – JsonDeserializer
+                  text/xml – XmlDeserializer
+                  * – XmlDeserializer
+                  
+Ghi đè Trình giải mã mặc định                  
+Nếu trình khử tuần tự mặc định không trả lời các yêu cầu của bạn, 
+RestSharp cũng cho phép lập trình viên tạo trình giải tuần tự riêng để xử lý nội dung.
+Điều này được thực hiện như sau:
+Tạo một lớp và thực hiện Deserializer. 
+                Sử dụng RestClient.AddHandler (loại, IDeserializer) để đăng ký một trình xử lý và loại nội dung liên quan của nó.
+                Nếu bạn cần xóa trình xử lý đã đăng ký, bạn có thể sử dụng lệnh RestClient.RemoveHandler (type).
+                RestClient.ClearHandlers () xóa tất cả các trình xử lý đã đăng ký.
+
+Xác thực
+RestSharp cũng cung cấp hỗ trợ xác thực 
+cho các hệ thống khác nhau như HTTP, NTLM và các chương trình dựa trên tham số khác. 
+Nó cũng cho phép bạn tạo Authenticator của riêng bạn. 
+Quá trình này rất đơn giản: Triển khai IAuthenticator và đăng ký với RestClient của bạn.
+RestSharp hỗ trợ các Trình xác thực sau:
+                HttpBasicAuthenticator
+                IAuthenticator
+                NtlmAuthenticator
+                OAuth1Authenticator
+                OAuth2Authenticator
+                SimpleAuthenticator
+
+Xử lý tác vụ nâng cao trong RestSharp
+RestSharp đảm nhiệm rất nhiều nhiệm vụ tầm thường,vì vậy bạn không cần phải dành thời gian quý giá cho công việc tẻ nhạt, lặp đi lặp lại. 
+Chẳng hạn, API trong RestSharp trả về XML, RestSharp tự động phát hiện và giải tuần tự hóa đối tượng 
+Gọi bằng XmlDeserializer mặc định.
+RestSharp có thể tạo RestRequest mặc định thông qua yêu cầu GET HTTP
+
+
+
+
