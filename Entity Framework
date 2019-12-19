@@ -1,0 +1,351 @@
+https://www.entityframeworktutorial.net/basics/how-entity-framework-works.aspx
+
+How Entity Framework Works?
+Entity Data Model (EDM).
+EDM is an in-memory representation of the entire metadata: conceptual model, storage model, and mapping between them.
+
+Conceptual Model: 
+EF builds the conceptual model from your domain classes, context class, 
+default conventions followed in your domain classes, and configurations.
+
+Storage Model: 
+EF builds the storage model for the underlying database schema.
+In the code-first approach, this will be inferred from the conceptual model.
+In the database-first approach, this will be inferred from the targeted database.
+
+Mappings:
+EF includes mapping information on how the conceptual model maps to the database schema (storage model).
+
+Entity Framework Architecture https://www.entityframeworktutorial.net/EntityFramework-Architecture.aspx
+
+EDM (Entity Data Model): EDM consists of three main parts - Conceptual model, Mapping and Storage model.
+
+Conceptual Model: The conceptual model contains the model classes and their relationships. 
+This will be independent from your database table design.
+
+Storage Model: The storage model is the database design model which includes tables, views, stored procedures, 
+and their relationships and keys.
+
+Mapping: Mapping consists of information about how the conceptual model is mapped to the storage model.
+
+LINQ to Entities: LINQ-to-Entities (L2E) is a query language used to write queries against the object model.
+It returns entities, which are defined in the conceptual model.
+You can use your LINQ skills here.
+
+Entity SQL: Entity SQL is another query language (For EF 6 only) just like LINQ to Entities. 
+However, it is a little more difficult than L2E and the developer will have to learn it separately.
+
+Object Service: Object service is a main entry point for accessing data from the database and returning it back.
+Object service is responsible for materialization,
+which is the process of converting data returned from an entity client data provider (next layer) to an entity object structure.
+
+Entity Client Data Provider: The main responsibility of this layer is to convert LINQ-to-Entities or Entity SQL queries into
+a SQL query which is understood by the underlying database. 
+It communicates with the ADO.Net data provider which in turn sends or retrieves data from the database.
+
+ADO.Net Data Provider: This layer communicates with the database using standard ADO.Net.
+
+
+DbContext https://www.entityframeworktutorial.net/basics/context-class-in-entity-framework.aspx
+Context Class in Entity Framework
+The context class is a most important class while working with EF 6 or EF Core. 
+It represent a session with the underlying database using which you can perform
+CRUD (Create, Read, Update, Delete) operations.
+
+The context class in Entity Framework is a class which derives from System.Data.Entity.DbContextDbContext in EF 6 and EF Core both.
+An instance of the context class represents Unit Of Work and Repository patterns wherein it can combine multiple changes under a single database transaction.
+
+The context class is used to query or save data to the database.
+It is also used to configure domain classes, database related mappings, change tracking settings, caching, transaction etc.
+
+The following SchoolContext class is an example of a context class.
+
+using System.Data.Entity;
+
+public class SchoolContext : DbContext
+{
+    public SchoolContext()
+    {
+
+    }
+    // Entities        
+    public DbSet<Student> Students { get; set; }
+    public DbSet<StudentAddress> StudentAddresses { get; set; }
+    public DbSet<Grade> Grades { get; set; }
+} 
+In the above example, the SchoolContext class is derived from DbContext, which makes it a context class. 
+It also includes an entity set for Student, StudentAddress, and Grade entities (learn about it next).
+
+What is an Entity in Entity Framework? https://www.entityframeworktutorial.net/basics/entity-in-entityframework.aspx
+
+An entity in Entity Framework is a class that maps to a database table.
+This class must be included as a DbSet<TEntity> type property in the DbContext class.
+EF API maps each entity to a table and each property of an entity to a column in the database.
+
+public class Student
+{
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public byte[]  Photo { get; set; }
+    public decimal Height { get; set; }
+    public float Weight { get; set; }
+        
+    public Grade Grade { get; set; }
+}
+
+public class Grade
+{
+    public int GradeId { get; set; }
+    public string GradeName { get; set; }
+    public string Section { get; set; }
+
+    public ICollection<Student> Students { get; set; }
+}        
+
+The above classes become entities when they are included as DbSet<TEntity> properties in a context class 
+(the class which derives from DbContext)
+
+public class SchoolContext : DbContext
+{
+    public SchoolContext()
+    {
+
+    }
+
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Grade> Grades { get; set; }
+}
+
+In the above context class, Students, and Grades properties of type DbSet<TEntity> are called entity sets.
+The Student, and Grade are entities. 
+EF API will create the Students and Grades tables in the database, as shown below.
+
+Entity Properties in Entity Framework
+An Entity can include two types of properties: Scalar Properties and Navigation Properties.
+
+Scalar Property
+The primitive type properties are called scalar properties.
+Each scalar property maps to a column in the database table which stores an actual data. 
+For example, StudentID, StudentName, DateOfBirth, Photo, Height, Weight are the scalar properties in the Student entity class.
+
+public class Student
+{
+    // scalar properties
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public byte[]  Photo { get; set; }
+    public decimal Height { get; set; }
+    public float Weight { get; set; }
+        
+    //reference navigation properties
+    public Grade Grade { get; set; }
+}
+
+EF API will create a column in the database table for each scalar property, as shown below.
+
+
+Navigation Property
+The navigation property represents a relationship to another entity.
+
+There are two types of navigation properties: Reference Navigation and Collection Navigation
+
+Reference Navigation Property
+If an entity includes a property of another entity type, it is called a Reference Navigation Property.
+It points to a single entity and represents multiplicity of one (1) in the entity relationships.
+
+EF API does will create a ForeignKey column in the table for 
+the navigation properties that points to a PrimaryKey of another table in the database. 
+For example, Grade are reference navigation properties in the following Student entity class.
+
+public class Student
+{
+    // scalar properties
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public byte[]  Photo { get; set; }
+    public decimal Height { get; set; }
+    public float Weight { get; set; }
+        
+    //reference navigation property
+    public Grade Grade { get; set; }
+}
+
+In the database, EF API will create a ForeignKey Grade_GradeId in the Students table, as shown below.
+If an entity includes a property of generic collection of an entity type, it is called a collection navigation property. 
+It represents multiplicity of many (*).
+
+EF API does not create any column for the collection navigation property in the related table of an entity, 
+but it creates a column in the table of an entity of generic collection. 
+For example, the following Grade entity contains a generic collection navigation property ICollection<Student>.
+Here, the Student entity is specified as generic type, 
+so EF API will create a column Grade_GradeId in the Students table in the database
+
+
+Types of Entities in Entity Framework https://www.entityframeworktutorial.net/Types-of-Entities.aspx
+There are two types of Entities in Entity Framework: POCO Entities and Dynamic Proxy Entities.
+
+POCO Entities (Plain Old CLR Object)
+A POCO entity is a class that doesn't depend on any framework-specific base class.
+It is like any other normal .NET CLR class, which is why it is called "Plain Old CLR Objects".
+
+POCO entities are supported in both EF 6 and EF Core.
+
+These POCO entities (also known as persistence-ignorant objects) support most of the same query, insert, update, and delete
+behaviors as entity types that are generated by the Entity Data Model. The following is an example of Student POCO entity.
+
+public class Student
+{
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public byte[]  Photo { get; set; }
+    public decimal Height { get; set; }
+    public float Weight { get; set; }
+        
+    public StudentAddress StudentAddress { get; set; }
+    public Grade Grade { get; set; }
+}
+Dynamic Proxy Entities (POCO Proxy)
+Dynamic Proxy is a runtime proxy class which wraps POCO entity. Dynamic proxy entities allow lazy loading.
+
+Note: Dynamic proxy entities are only supported in EF 6. EF Core 2.0 does not support them yet.
+
+A POCO entity should meet the following requirements to become a POCO proxy:
+
+A POCO class must be declared with public access.
+A POCO class must not be sealed (NotInheritable in Visual Basic).
+A POCO class must not be abstract (MustInherit in Visual Basic).
+Each navigation property must be declared as public, virtual.
+Each collection property must be ICollection<T>.
+The ProxyCreationEnabled option must NOT be false (default is true) in context class.
+The following POCO entity meets all of the above requirements to become a dynamic proxy entity at runtime.
+
+public class Student
+{
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public byte[]  Photo { get; set; }
+    public decimal Height { get; set; }
+    public float Weight { get; set; }
+        
+    public virtual StudentAddress StudentAddress { get; set; }
+    public virtual Grade Grade { get; set; }
+}
+Note: By default, dynamic proxy is enabled for every entity.
+However, you can disable dynamic proxy by setting context.Configuration.ProxyCreationEnabled = false;
+in the context class.
+
+At runtime, EF API will create an instance of dynamic proxy for the above Student entity. 
+The type of dynamic proxy for Student will be System.Data.Entity.DynamicProxies.Student, as shown below:
+
+dynamic proxy entity in entity framework
+Use ObjectContext.GetObjectType() to find the underlying wrapped type by the dynamic proxy as shown below:
+
+dynamic proxy entity in entity framework
+
+EntityState in Entity Framework https://www.entityframeworktutorial.net/basics/entity-states.aspx
+
+EF API maintains the state of each entity during an its lifetime. Each entity has a state based on the operation performed on it via the context class. The entity state represented by an enum System.Data.Entity.EntityState in EF 6 and Microsoft.EntityFrameworkCore.EntityState in EF Core with the following values:
+
+Added
+Modified
+Deleted
+Unchanged
+Detached
+The Context not only holds the reference to all the entity objects as soon as retrieved from the database,
+but also keeps track of entity states and maintains modifications made to the properties of the entity. 
+This feature is known as Change Tracking.
+
+The change in entity state from the Unchanged to the Modified state is the only state that's automatically handled by the context.
+All other changes must be made explicitly using proper methods of DbContext or DbSet. 
+(You will learn about these methods in EF 6 and EF Core sections.)
+
+EF API builds and executes the INSERT, UPDATE, and DELETE commands based on the state of an entity
+when the context.SaveChanges() method is called. It executes the INSERT command for the entities with Added state,
+the UPDATE command for the entities with Modified state and the DELETE command for the entities in Deleted state.
+The context does not track entities in the Detached state. The following figure illustrates the significance of entity states:
+
+entity states in Entity
+Thus, entity states play an important role in Entity Framework.
+
+
+Development Approaches with Entity Framework https://www.entityframeworktutorial.net/choosing-development-approach-with-entity-framework.aspx
+Development Approaches with Entity Framework
+There are three different approaches you can use while developing your application using Entity Framework:
+
+Database-First
+Code-First
+Model-First
+Database-First Approach
+In the database-first development approach, you generate the context and entities for the existing database using EDM wizard integrated in Visual Studio or executing EF commands.
+
+Entity Framework database first
+EF 6 supports the database-first approach extensively. Visit EF 6 DB-First section to learn about the database-first approach using EF 6.
+
+EF Core includes limited support for this approach.
+
+Code-First Approach
+Use this approach when you do not have an existing database for your application. In the code-first approach, you start writing your entities (domain classes) and context class first and then create the database from these classes using migration commands.
+
+Developers who follow the Domain-Driven Design (DDD) principles, prefer to begin with coding their domain classes first and then generate the database required to persist their data.
+
+code-first in entity framework
+Visit the EF 6 Code-First Tutorials section to learn EF 6 code-first development from scratch.
+
+Visit EF Core section to learn about the code-first approach in EF Core.
+
+Model-First Approach
+In the model-first approach, you create entities, relationships, and inheritance hierarchies directly on the visual designer integrated in Visual Studio and then generate entities, the context class, and the database script from your visual model.
+
+code-first in entity framework
+EF 6 includes limited support for this approach.
+
+EF Core does not support this approach.
+
+Choosing the Development Approach for Your Application
+Use the following flow chart to decide which is the right approach to develop your application using Entity Framework:
+
+Choose Entity Framework modling
+As per the above figure, if you already have an existing application with domain classes, 
+then you can use the code-first approach because you can create a database from your existing classes. 
+If you have an existing database, then you can create an EDM from an existing database in the database-first approach. 
+If you do not have an existing database or domain classes, and you prefer to design your DB model on the visual designer, 
+then go for the Model-first approach.
+
+
+Persistence in Entity Framework https://www.entityframeworktutorial.net/EntityFramework4.3/persistence-in-entity-framework.aspx
+There are two scenarios when persisting (saving) an entity to the database using Entity Framework: the Connected Scenario and the Disconnected Scenario.
+
+Connected Scenario
+In the connected scenario, the same instance of the context class (derived from DbContext) is used in retrieving and saving entities. It keeps track of all entities during its lifetime. This is useful in windows applications with the local database or the database on the same network.
+
+Entity Framework tutorial 4.3 dbcontext
+Pros:
+
+Performs fast.
+The context keeps track of all entities and automatically sets an appropriate state as and when changes occurr to entities.
+Cons:
+
+The context stays alive, so the connection with the database stays open.
+Utilizes more resources.
+Disconnected Scenario
+In the disconnected scenario, different instances of the context are used to retrieve and save entities to the database. An instance of the context is disposed after retrieving data and a new instance is created to save entities to the database.
+
+Entity Framework tutorial 4.3 dbcontext
+The disconnected scenario is complex because an instance of the context doesn't track entities, so you must set an appropriate state to each entity before saving entities using SaveChanges(). In the figure above, the application retrieves an entity graph using Context 1 and then the application performs some CUD (Create, Update, Delete) operations using Context 2. Context 2 doesn't know what operation has been performed on the entity graph in this scenario.
+
+This is useful in web applications or applications with a remote database.
+
+Pros:
+
+Utilizes less resources compared to the connected scenario.
+No open connection with the database.
+Cons:
+
+Need to set an appropriate state to each entity before saving.
+Performs slower than the connected scenario.
+
