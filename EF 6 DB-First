@@ -1,0 +1,450 @@
+EF 6 Database-First and Code-First Features https://www.entityframeworktutorial.net/entityframework6/introduction.aspx
+
+Creating Entity Data Model from your existing database
+Querying data using LINQ
+Saving data
+Using existing stored procedures, views, and table-valued functions
+CRUD operations using stored procedures
+Optimistic concurrency & transactions support
+Supports Spatial Data Types
+Connection resiliency
+Asynchronous query and save
+Code-based configuration
+Database command logging
+Database command interception
+Dependency Resolution
+DbSet.AddRange/RemoveRange
+Better Transaction Support
+Pluggable pluralization and singularization service
+Testability improvements
+Creating context with an open connection
+Improved performance and warm-up time
+
+
+Creating an Entity Data Model https://www.entityframeworktutorial.net/entityframework6/create-entity-data-model.aspx
+Model Browser https://www.entityframeworktutorial.net/model-browser-in-entity-framework.aspx
+
+DbContext in Entity Framework 6 https://www.entityframeworktutorial.net/entityframework6/dbcontext.aspx
+As you have seen in the previous Create Entity Data Model section, 
+EDM includes the SchoolDBEntities class, which is derived from the System.Data.Entity.DbContext class,
+as shown below. The class that derives DbContext is called context class in entity framework.
+
+Entity Framework 5.0 Tutorial
+DbContext is an important class in Entity Framework API.
+It is a bridge between your domain or entity classes and the database.
+
+Entity Framework dbcontext
+DbContext is the primary class that is responsible for interacting with the database.
+It is responsible for the following activities:
+
+Querying: Converts LINQ-to-Entities queries to SQL query and sends them to the database.
+Change Tracking: Keeps track of changes that occurred on the entities after querying from the database.
+Persisting Data: Performs the Insert, Update and Delete operations to the database, based on entity states.
+Caching: Provides first level caching by default. It stores the entities which have been retrieved during the life time of a context class.
+Manage Relationship: Manages relationships using CSDL, MSL and SSDL in Db-First or Model-First approach, and using fluent API configurations in Code-First approach.
+Object Materialization: Converts raw data from the database into entity objects.
+The following is an example of SchoolDBEntities class (context class that derives from DbContext) generated with EDM for the SchoolDB database in the previous section.
+
+namespace EFTutorials
+{
+    using System;
+    using System.Data.Entity;
+    using System.Data.Entity.Infrastructure;
+    using System.Data.Entity.Core.Objects;
+    using System.Linq;
+    
+    public partial class SchoolDBEntities : DbContext
+    {
+        public SchoolDBEntities()
+            : base("name=SchoolDBEntities")
+        {
+        }
+    
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            throw new UnintentionalCodeFirstException();
+        }
+    
+        public virtual DbSet<Course> Courses { get; set; }
+        public virtual DbSet<Standard> Standards { get; set; }
+        public virtual DbSet<Student> Students { get; set; }
+        public virtual DbSet<StudentAddress> StudentAddresses { get; set; }
+        public virtual DbSet<Teacher> Teachers { get; set; }
+        public virtual DbSet<View_StudentCourse> View_StudentCourse { get; set; }
+    
+        public virtual ObjectResult<GetCoursesByStudentId_Result> GetCoursesByStudentId(Nullable<int> studentId)
+        {
+            var studentIdParameter = studentId.HasValue ?
+                new ObjectParameter("StudentId", studentId) :
+                new ObjectParameter("StudentId", typeof(int));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetCoursesByStudentId_Result>("GetCoursesByStudentId", studentIdParameter);
+        }
+    
+        public virtual int sp_DeleteStudent(Nullable<int> studentId)
+        {
+            var studentIdParameter = studentId.HasValue ?
+                new ObjectParameter("StudentId", studentId) :
+                new ObjectParameter("StudentId", typeof(int));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("sp_DeleteStudent", studentIdParameter);
+        }
+    
+        public virtual ObjectResult<Nullable<decimal>> sp_InsertStudentInfo(Nullable<int> standardId, string studentName)
+        {
+            var standardIdParameter = standardId.HasValue ?
+                new ObjectParameter("StandardId", standardId) :
+                new ("StandardId", typeof(int));
+    
+            var studentNameParameter = studentName != null ?
+                new ObjectParameter("StudentName", studentName) :
+                new ObjectParameter("StudentName", typeof(string));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<Nullable<decimal>>("sp_InsertStudentInfo", standardIdParameter, studentNameParameter);
+        }
+    
+        public virtual int sp_UpdateStudent(Nullable<int> studentId, Nullable<int> standardId, string studentName)
+        {
+            var studentIdParameter = studentId.HasValue ?
+                new ObjectParameter("StudentId", studentId) :
+                new ObjectParameter("StudentId", typeof(int));
+    
+            var standardIdParameter = standardId.HasValue ?
+                new ObjectParameter("StandardId", standardId) :
+                new ObjectParameter("StandardId", typeof(int));
+    
+            var studentNameParameter = studentName != null ?
+                new ObjectParameter("StudentName", studentName) :
+                new ObjectParameter("StudentName", typeof(string));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction("sp_UpdateStudent", studentIdParameter, standardIdParameter, studentNameParameter);
+        }
+    }
+}           
+As you can see in the above example, the context class (SchoolDBEntities) 
+includes the entity set of type DbSet<TEntity> for all the entities. Learn about DbSet class here.
+It also includes functions for the stored procedures and views included in EDM.
+
+The OnModelCreating method allows us to configure the model using DbModelBuilder Fluent API in EF 6.
+
+
+DbContext Methods
+Method	Usage
+Entry:	Gets an DbEntityEntry for the given entity. The entry provides access to change tracking information and operations for the entity.
+SaveChanges:	Executes INSERT, UPDATE and DELETE commands to the database for the entities with Added, Modified and Deleted state.
+SaveChangesAsync:	Asynchronous method of SaveChanges()
+Set: Creates a DbSet<TEntity> that can be used to query and save instances of TEntity.
+OnModelCreating: Override this method to further configure the model that was discovered
+by convention from the entity types exposed in DbSet<TEntity> properties on your derived context.
+
+
+DbContext Properties
+Method	Usage
+ChangeTracker	Provides access to information and operations for entity instances that this context is tracking.
+Configuration	Provides access to configuration options.
+Database	Provides access to database related information and operations.
+
+DbSet in Entity Framework 6 https://www.entityframeworktutorial.net/entityframework6/dbset.aspx
+
+The DbSet class represents an entity set that can be used for create, read, update, and delete operations.
+
+The context class (derived from DbContext) must include the DbSet type properties for the entities
+which map to database tables and views.
+
+The following table lists important methods of the DbSet class:
+
+Add	
+Added entity type	
+Adds the given entity to the context with the Added state.
+When the changes are saved, the entities in the Added states are inserted into the database.
+After the changes are saved, the object state changes to Unchanged.
+Example:
+dbcontext.Students.Add(studentEntity)
+
+
+AsNoTracking<Entity>
+DBQuery<Entity>	
+Returns a new query where the entities returned will not be cached in the DbContext. (Inherited from DbQuery.)
+Entities returned as AsNoTracking will not be tracked by DBContext. 
+This will be a significant performance boost for read-only entities.
+Example:
+var studentList = dbcontext.Students.AsNoTracking<Student>().ToList<Student>();
+
+
+Attach(Entity)
+Entity which was passed as parameter
+Attaches the given entity to the context in the Unchanged state
+Example:
+dbcontext.Students.Attach(studentEntity);
+
+
+Create	
+Entity	
+Creates a new instance of an entity for the type of this set.
+This instance is not added or attached to the set.
+The instance returned will be a proxy if the underlying context is configured to create proxies 
+and the entity type meets the requirements for creating a proxy.
+Example:
+var newStudentEntity = dbcontext.Students.Create();
+
+
+Find(int)	
+Entity type	Uses the primary key value to find an entity tracked by the context.
+If the entity is not in the context,
+then a query will be executed and evaluated against the data in the data source, 
+and null is returned if the entity is not found in the context or in the data source. 
+Note that the Find also returns entities that have been added to the context but have not yet been saved to the database.
+Example:
+Student studEntity = dbcontext.Students.Find(1);
+
+
+Include	
+DBQuery
+Returns the included non-generic LINQ to Entities query against a DbContext. (Inherited from DbQuery)
+Example:
+var studentList = dbcontext.Students.Include("StudentAddress").ToList<Student>();
+var studentList = dbcontext.Students.Include(s => s.StudentAddress).ToList<Student>();
+
+
+Remove	
+Removed entity	
+Marks the given entity as Deleted. When the changes are saved, 
+the entity is deleted from the database.
+The entity must exist in the context in some other state before this method is called.
+Example:
+dbcontext.Students.Remove(studentEntity);
+
+
+SqlQuery	
+DBSqlQuery	
+Creates a raw SQL query that will return entities in this set.
+By default, the entities returned are tracked by the context; 
+this can be changed by calling AsNoTracking on theDbSqlQuery<TEntity> returned from this method.
+Example:
+var studentEntity = dbcontext.Students.SqlQuery("select * from student where studentid = 1").FirstOrDefault<Student>();
+
+Relationships between Entities in Entity Framework 6 https://www.entityframeworktutorial.net/entity-relationships.aspx
+
+Here, you will learn how entity framework manages the relationships between entities.
+
+Entity framework supports three types of relationships, same as database: 1) One-to-One 2) One-to-Many, and 3) Many-to-Many.
+
+We have created an Entity Data Model for the SchoolDB database in the Create Entity Data Model chapter. The following figure shows the visual designer for that EDM with all the entities and relationships among them.
+
+Entity relationships in entity framework
+Let's see how each relationship (association) is being managed by entity framework.
+
+One-to-One Relationship
+As you can see in the above figure, 
+Student and StudentAddress have a One-to-One relationship (zero or one).
+A student can have only one or zero addresses.
+Entity framework adds the Student reference navigation property into the StudentAddress entity and the StudentAddress
+navigation entity into the Student entity. Also, the StudentAddress entity has both StudentId property as PrimaryKey and ForeignKey,
+which makes it a one-to-one relationship.
+
+public partial class Student
+{
+    public Student()
+    {
+        this.Courses = new HashSet<Course>();
+    }
+    
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public Nullable<int> StandardId { get; set; }
+    public byte[] RowVersion { get; set; }
+    
+    public virtual StudentAddress StudentAddress { get; set; }
+    }
+    
+public partial class StudentAddress
+{
+    public int StudentID { get; set; }
+    public string Address1 { get; set; }
+    public string Address2 { get; set; }
+    public string City { get; set; }
+    public string State { get; set; }
+    
+    public virtual Student Student { get; set; }
+}
+In the above example, the StudentId property needs to be PrimaryKey as well as ForeignKey. 
+This can be configured using Fluent API in the OnModelCreating method of the context class.
+
+One-to-Many Relationship
+The Standard and Teacher entities have a One-to-Many relationship marked by multiplicity where 1 is for One and * is for Many.
+This means that Standard can have many Teachers whereas Teacher can associate with only one Standard.
+
+To represent this, the Standard entity has the collection navigation property Teachers (please notice that it's plural),
+which indicates that one Standard can have a collection of Teachers (many teachers).
+And the Teacher entity has a Standard navigation property (reference property), 
+which indicates that Teacher is associated with one Standard. Also, it contains the StandardId foreign key (PK in Standard entity). 
+This makes it a One-to-Many relationship.
+
+public partial class Standard
+{
+    public Standard()
+    {
+        this.Teachers = new HashSet<Teacher>();
+    }
+    
+    public int StandardId { get; set; }
+    public string StandardName { get; set; }
+    public string Description { get; set; }
+    
+    public virtual ICollection<Teacher> Teachers { get; set; }
+}
+
+public partial class Teacher
+{
+    public Teacher()
+    {
+        this.Courses = new HashSet<Course>();
+    }
+    
+    public int TeacherId { get; set; }
+    public string TeacherName { get; set; }
+    public Nullable<int> TeacherType { get; set; }
+    
+    public Nullable<int> StandardId { get; set; }
+    public virtual Standard Standard { get; set; }
+}
+Many-to-Many Relationship
+The Student and Course have a Many-to-Many relationship marked by * multiplicity.
+It means one Student can enroll for many Courses and also, one Course can be taught to many Students.
+
+The database includes the StudentCourse joining table which includes the primary key of both the tables (Student and Course tables). 
+Entity Framework represents many-to-many relationships by not having the entity set (DbSet property) 
+for the joining table in the CSDL and visual designer. Instead it manages this through mapping.
+
+As you can see in the above figure, the Student entity includes the collection navigation property Courses and Course entity 
+includes the collection navigation property Students to represent a many-to-many relationship between them.
+
+The following code snippet shows the Student and Course entity classes.
+
+public partial class Student
+{
+    public Student()
+    {
+        this.Courses = new HashSet<Course>();
+    }
+    
+    public int StudentID { get; set; }
+    public string StudentName { get; set; }
+    public Nullable<int> StandardId { get; set; }
+    public byte[] RowVersion { get; set; }
+    
+    public virtual ICollection<Course> Courses { get; set; }
+}
+    
+public partial class Course
+{
+    public Course()
+    {
+        this.Students = new HashSet<Student>();
+    }
+    
+    public int CourseId { get; set; }
+    public string CourseName { get; set; }
+    public System.Data.Entity.Spatial.DbGeography Location { get; set; }
+    
+    public virtual ICollection<Student> Students { get; set; }
+}
+Note: Entity framework supports many-to-many relationships only when the joining table (StudentCourse in this case)
+does NOT include any columns other than PKs of both tables. 
+If the join tables contain additional columns, such as DateCreated, then the EDM creates an entity for the middle table as well
+and you will have to manage CRUD operations for many-to-many entities manually.
+
+Open EDM in XML view. You can see that SSDL (storage schema) has the StudentCourse entityset,
+but CSDL doesn't have it. Instead, it's being mapped in the navigation property of the Student and Course entities.
+MSL (C-S Mapping) has mapping between Student and Course put into the StudentCourse table in the <AssociationSetMapping/> section.
+
+
+Saving Data in the Connected Scenario  https://www.entityframeworktutorial.net/crud-operation-in-connected-scenario-entity-framework.aspx
+
+Saving entity data in the connected scenario is a fairly easy task because the context automatically tracks 
+the changes that happened on the entity during its lifetime.
+
+Here, we will use the same EDM for CRUD operations which we created in the Create Entity Data Model chapter.
+An entity which contains data in its scalar property will be either inserted, updated or deleted, based on its EntityState.
+
+In the Entity Framework, there are two persistence scenarios to save an entity data: connected and disconnected. 
+In the connected scenario, the same instance of DbContext is used in retrieving and saving entities, 
+whereas this is different in the disconnected scenario.
+In this chapter, you will learn about saving data in the connected scenario.
+
+The following figure illustrates the CUD (Create, Update, Delete) operations in the connected scenario.
+
+
+As per the above figure, Entity Framework builds and executes INSERT, UPDATE, and DELETE statements 
+for the entities whose EntityState is Added, Modified, or Deleted when the DbContext.SaveChanges() method is called. 
+In the connected scenario, an instance of DbContext keeps track of all the entities and so, it automatically sets an appropriate EntityState to each entity whenever an entity is created, modified, or deleted.
+
+Insert Data
+Use the DbSet.Add method to add a new entity to a context (instance of DbContext),
+which will insert a new record in the database when you call the SaveChanges() method.
+
+using (var context = new SchoolDBEntities())
+{
+    var std = new Student()
+    {
+        FirstName = "Bill",
+        LastName = "Gates"
+    };
+    context.Students.Add(std);
+
+    context.SaveChanges();
+}
+In the above example, context.Students.Add(std) adds a newly created instance of the Student entity to a context with Added EntityState. The context.SaveChanges() method builds and executes the following INSERT statement to the database.
+
+exec sp_executesql N'INSERT [dbo].[Students]([FirstName], [LastName])
+VALUES (@0, @1)
+SELECT [StudentId]
+FROM [dbo].[Students]
+WHERE @@ROWCOUNT > 0 AND [StudentId] = scope_identity()',N
+''@0 nvarchar(max) ,@1 nvarchar(max) ',@0=N'Bill',@1=N'Gates'
+go
+Updating Data
+In the connected scenario, EF API keeps track of all the entities retrieved using a context.
+Therefore, when you edit entity data, EF automatically marks EntityState to Modified,
+which results in an updated statement in the database when you call the SaveChanges() method.
+
+using (var context = new SchoolDBEntities())
+{
+    var std = context.Students.First<Student>(); 
+    std.FirstName = "Steve";
+    context.SaveChanges();
+}
+In the above example, we retrieve the first student from the database using context.Students.First<student>().
+As soon as we modify the FirstName,
+the context sets its EntityState to Modified because of the modification performed in the scope of the DbContext instance (context). 
+So, when we call the SaveChanges() method, it builds and executes the following Update statement in the database.
+
+exec sp_executesql N'UPDATE [dbo].[Students]
+SET [FirstName] = @0
+WHERE ([StudentId] = @1)',
+N'@0 nvarchar(max) ,@1 int',@0=N'Steve',@1=2
+Go
+In an update statement, EF API includes the properties with modified values, 
+other properties being ignored. In the above example, only the FirstName property was edited, 
+so an update statement includes only the FirstName column.
+
+Deleting Data
+Use the DbSet.Remove() method to delete a record in the database table.
+
+using (var context = new SchoolDBEntities())
+{
+    var std = context.Students.First<Student>();
+    context.Students.Remove(std);
+
+    context.SaveChanges();
+}
+In the above example, context.Students.Remove(std) marks the std entity object as Deleted.
+Therefore, EF will build and execute the following DELETE statement in the database.
+
+exec sp_executesql N'DELETE [dbo].[Students]
+WHERE ([StudentId] = @0)',N'@0 int',@0=1
+Go
+
+
+Querying in Entity Framework https://www.entityframeworktutorial.net/Querying-with-EDM.aspx
+
