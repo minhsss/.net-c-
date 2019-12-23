@@ -1,0 +1,9 @@
+https://stackoverflow.com/questions/372865/path-combine-for-urls
+
+Url.Combine("http://MyUrl.com/", "/Images/Image.jpg")
+which would return:
+"http://MyUrl.com/Images/Image.jpg"
+
+
+Uri baseUri = new Uri("http://www.contoso.com");
+Uri myUri = new Uri(baseUri, "catalog/shownew.htm");
