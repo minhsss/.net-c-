@@ -1,0 +1,64 @@
+https://stackoverflow.com/questions/3309188/how-to-sort-a-listt-by-a-property-in-the-object
+
+List<Order> SortedList = objListOrder.OrderBy(o=>o.OrderDate).ToList();
+
+objListOrder.Sort((x, y) => x.OrderDate.CompareTo(y.OrderDate));
+
+o do this without LINQ on .Net2.0:
+
+List<Order> objListOrder = GetOrderList();
+objListOrder.Sort(
+    delegate(Order p1, Order p2)
+    {
+        return p1.OrderDate.CompareTo(p2.OrderDate);
+    }
+);
+
+If you're on .Net3.0, then LukeH's answer is what you're after.
+
+To sort on multiple properties, you can still do it within a delegate. For example:
+
+orderList.Sort(
+    delegate(Order p1, Order p2)
+    {
+        int compareDate = p1.Date.CompareTo(p2.Date);
+        if (compareDate == 0)
+        {
+            return p2.OrderID.CompareTo(p1.OrderID);
+        }
+        return compareDate;
+    }
+);
+This would give you ascending dates with descending orderIds.
+
+However, I wouldn't recommend sticking delegates as it will mean lots of places without code re-use. 
+You should implement an IComparer and just pass that through to your Sort method. See here.
+
+public class MyOrderingClass : IComparer<Order>
+{
+    public int Compare(Order x, Order y)
+    {
+        int compareDate = x.Date.CompareTo(y.Date);
+        if (compareDate == 0)
+        {
+            return x.OrderID.CompareTo(y.OrderID);
+        }
+        return compareDate;
+    }
+}
+And then to use this IComparer class, just instantiate it and pass it to your Sort method:
+
+IComparer<Order> comparer = new MyOrderingClass();
+orderList.Sort(comparer);
+
+
+
+Using LINQ
+
+objListOrder = GetOrderList()
+                   .OrderBy(o => o.OrderDate)
+                   .ToList();
+
+objListOrder = GetOrderList()
+                   .OrderBy(o => o.OrderId)
+                   .ToList();
