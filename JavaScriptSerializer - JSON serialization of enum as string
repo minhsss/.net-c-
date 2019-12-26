@@ -1,0 +1,26 @@
+https://stackoverflow.com/questions/2441290/javascriptserializer-json-serialization-of-enum-as-string
+
+I have found that Json.NET provides the exact functionality I'm looking for with a StringEnumConverter attribute:
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+[JsonConverter(typeof(StringEnumConverter))]
+public Gender Gender { get; set; }
+More details at available on StringEnumConverter documentation.
+
+There are other places to configure this converter more globally:
+
+enum itself if you want enum always be serialized/deserialized as string:
+
+[JsonConverter(typeof(StringEnumConverter))]  
+enum Gender { Male, Female }
+In case anyone wants to avoid attribute decoration, you can add the converter to your JsonSerializer (suggested by Bjørn Egil):
+
+serializer.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter()); 
+and it will work for every enum it sees during that serialization (suggested by Travis).
+
+or JsonConverter (suggested by banana):
+
+JsonConvert.SerializeObject(MyObject, 
+    new Newtonsoft.Json.Converters.StringEnumConverter());
