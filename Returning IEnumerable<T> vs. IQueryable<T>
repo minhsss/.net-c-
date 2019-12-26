@@ -18,5 +18,34 @@ then filtering out the non-gold customers in the memory:
 IEnumerable<Customer> custs = ...;
 // Later on...
 var goldCustomers = custs.Where(c => c.IsGold);
-This is quite an important difference, and working on IQueryable<T> can in many cases save you from returning too many rows from the database. Another prime example is doing paging: If you use Take and Skip on IQueryable, you will only get the number of rows requested;
+This is quite an important difference, and working on IQueryable<T> 
+can in many cases save you from returning too many rows from the database. 
+Another prime example is doing paging: 
+If you use Take and Skip on IQueryable, you will only get the number of rows requested;
 doing that on an IEnumerable<T> will cause all of your rows to be loaded in memory.
+
+The top answer is good but it doesn't mention expression trees which explain "how" the two interfaces differ. 
+Basically, there are two identical sets of LINQ extensions.
+Where(), Sum(), Count(), FirstOrDefault(), etc all have two versions: one that accepts functions and one that accepts expressions.
+
+The IEnumerable version signature is: Where(Func<Customer, bool> predicate)
+
+The IQueryable version signature is: Where(Expression<Func<Customer, bool>> predicate)
+
+You've probably been using both of those without realizing it because both are called using identical syntax:
+
+e.g. Where(x => x.City == "<City>") works on both IEnumerable and IQueryable
+
+When using Where() on an IEnumerable collection, the compiler passes a compiled function to Where()
+
+When using Where() on an IQueryable collection, the compiler passes an expression tree to Where().
+An expression tree is like the reflection system but for code. 
+The compiler converts your code into a data structure that describes what your code does in a format that's easily digestible.
+
+Why bother with this expression tree thing? I just want Where() to filter my data.
+The main reason is that both the EF and Linq2SQL ORMs can convert expression trees directly into SQL 
+where your code will execute much faster.
+
+Oh, that sounds like a free performance boost, should I use AsQueryable() all over the place in that case?
+No, IQueryable is only useful if the underlying data provider can do something with it. 
+Converting something like a regular List to IQueryable will not give you any benefit.
