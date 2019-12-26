@@ -49,3 +49,35 @@ where your code will execute much faster.
 Oh, that sounds like a free performance boost, should I use AsQueryable() all over the place in that case?
 No, IQueryable is only useful if the underlying data provider can do something with it. 
 Converting something like a regular List to IQueryable will not give you any benefit.
+
+
+
+
+When we run the following code:
+
+MarketDevEntities db = new MarketDevEntities();
+
+IEnumerable<WebLog> first = db.WebLogs;
+var second = first.Where(c => c.DurationSeconds > 10);
+var third = second.Where(c => c.WebLogID > 100);
+var result = third.Where(c => c.EmailAddress.Length > 11);
+
+Console.Write(result.First().UserName);
+In SQL Server profiler we find a command equal to:
+
+"SELECT * FROM [dbo].[WebLog]"
+It approximately takes 90 seconds to run that block of code against a WebLog table which has 1 million records.
+
+So, all table records are loaded into memory as objects, 
+and then with each .Where() it will be another filter in memory against these objects.
+
+When we use IQueryable instead of IEnumerable in the above example (second line):
+
+In SQL Server profiler we find a command equal to:
+
+"SELECT TOP 1 * FROM [dbo].[WebLog] WHERE [DurationSeconds] > 10 AND [WebLogID] > 100 AND LEN([EmailAddress]) > 11"
+It approximately takes four seconds to run this block of code using IQueryable.
+
+IQueryable has a property called Expression which stores a tree expression which starts being created when we used the
+result in our example (which is called deferred execution),
+and at the end this expression will be converted to an SQL query to run on the database engine.
