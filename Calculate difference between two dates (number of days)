@@ -1,0 +1,5 @@
+https://stackoverflow.com/questions/1607336/calculate-difference-between-two-dates-number-of-days
+
+Assuming StartDate and EndDate are of type DateTime:
+
+(EndDate - StartDate).TotalDays
