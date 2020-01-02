@@ -1,0 +1,62 @@
+https://stackoverflow.com/questions/7325278/group-by-in-linq
+
+class Person { 
+    internal int PersonID; 
+    internal string car  ; 
+}
+Now I have a list of this class: List<Person> persons;
+
+Now this list can have multiple instances with same PersonIDs, for example:
+
+persons[0] = new Person { PersonID = 1, car = "Ferrari" }; 
+persons[1] = new Person { PersonID = 1, car = "BMW"     }; 
+persons[2] = new Person { PersonID = 2, car = "Audi"    }; 
+Is there a way I can group by personID and get the list of all the cars he has?
+
+For example, expected result would be
+
+class Result { 
+   int PersonID;
+   List<string> cars; 
+}
+So after grouping, I would get:
+
+results[0].PersonID = 1; 
+List<string> cars = results[0].cars; 
+
+result[1].PersonID = 2; 
+List<string> cars = result[1].cars;
+From what I have done so far:
+
+var results = from p in persons
+              group p by p.PersonID into g
+              select new { PersonID = g.Key, // this is where I am not sure what to do}
+              
+
+
+Absolutely - you basically want:
+
+var results = from p in persons
+              group p.car by p.PersonId into g
+              select new { PersonId = g.Key, Cars = g.ToList() };
+Or as a non-query expression:
+
+var results = persons.GroupBy(
+    p => p.PersonId, 
+    p => p.car,
+    (key, g) => new { PersonId = key, Cars = g.ToList() });
+Basically the contents of the group (when view as an IEnumerable<T>) is a sequence of whatever values were in the projection (p.car in this case) present for the given key.
+
+For more on how GroupBy works, see my Edulinq post on the topic.
+
+(I've renamed PersonID to PersonId in the above, to follow .NET naming conventions.)
+
+Alternatively, you could use a Lookup:
+
+var carsByPersonId = persons.ToLookup(p => p.PersonId, p => p.car);
+You can then get the cars for each person very easily:
+
+// This will be an empty sequence for any personId not in the lookup
+var carsForPerson = carsByPersonId[personId];
+
+
