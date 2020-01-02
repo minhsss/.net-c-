@@ -1,0 +1,44 @@
+https://stackoverflow.com/questions/232535/how-do-i-use-reflection-to-call-a-generic-method
+
+What's the best way to call a generic method when the type parameter isn't known at compile time, but instead is obtained dynamically at runtime?
+
+Consider the following sample code - inside the Example() method, what's the most concise way to invoke GenericMethod<T>() using the Type stored in the myType variable?
+
+public class Sample
+{
+    public void Example(string typeName)
+    {
+        Type myType = FindType(typeName);
+
+        // What goes here to call GenericMethod<T>()?
+        GenericMethod<myType>(); // This doesn't work
+
+        // What changes to call StaticMethod<T>()?
+        Sample.StaticMethod<myType>(); // This also doesn't work
+    }
+
+    public void GenericMethod<T>()
+    {
+        // ...
+    }
+
+    public static void StaticMethod<T>()
+    {
+        //...
+    }
+}
+
+
+
+
+
+You need to use reflection to get the method to start with, then "construct" it by supplying type arguments with MakeGenericMethod:
+
+MethodInfo method = typeof(Sample).GetMethod("GenericMethod");
+MethodInfo generic = method.MakeGenericMethod(myType);
+generic.Invoke(this, null);
+
+For a static method, pass null as the first argument to Invoke. That's nothing to do with generic methods - it's just normal reflection.
+
+As noted, a lot of this is simpler as of C# 4 using dynamic - if you can use type inference, of course.
+It doesn't help in cases where type inference isn't available, such as the exact example in the question.
