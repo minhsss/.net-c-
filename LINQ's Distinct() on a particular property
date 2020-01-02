@@ -1,0 +1,59 @@
+I am playing with LINQ to learn about it, but I can't figure out how to use Distinct when I do not have a simple list 
+(a simple list of integers is pretty easy to do, this is not the question).
+What I if want to use Distinct on a list of an Object on one or more properties of the object?
+
+Example: If an object is Person, with Property Id. 
+How can I get all Person and use Distinct on them with the property Id of the object?
+
+Person1: Id=1, Name="Test1"
+Person2: Id=1, Name="Test1"
+Person3: Id=2, Name="Test2"
+How can I get just Person1 and Person3? Is that possible?
+
+If it's not possible with LINQ, what would be the best way to have a list of Person depending on some of its properties in .NET 3.5?
+
+What you need is a "distinct-by" effectively. I don't believe it's part of LINQ as it stands, although it's fairly easy to write:
+
+public static IEnumerable<TSource> DistinctBy<TSource, TKey>
+    (this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+{
+    HashSet<TKey> seenKeys = new HashSet<TKey>();
+    foreach (TSource element in source)
+    {
+        if (seenKeys.Add(keySelector(element)))
+        {
+            yield return element;
+        }
+    }
+}
+So to find the distinct values using just the Id property, you could use:
+
+var query = people.DistinctBy(p => p.Id);
+And to use multiple properties, you can use anonymous types, which implement equality appropriately:
+
+var query = people.DistinctBy(p => new { p.Id, p.Name });
+Untested, but it should work (and it now at least compiles).
+
+It assumes the default comparer for the keys though - if you want to pass in an equality comparer, 
+just pass it on to the HashSet constructor.
+
+
+What if I want to obtain a distinct list based on one or more properties?
+
+
+List<Person> distinctPeople = allPeople
+  .GroupBy(p => p.PersonId)
+  .Select(g => g.First())
+  .ToList();
+If you want to define groups on multiple properties, here's how:
+
+List<Person> distinctPeople = allPeople
+  .GroupBy(p => new {p.PersonId, p.FavoriteColor} )
+  .Select(g => g.First())
+  .ToList();
+
+
+
+
+
+
