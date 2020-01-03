@@ -1,0 +1,10 @@
+https://stackoverflow.com/questions/1100260/multiline-string-literal-in-c-sharp
+
+string query = "SELECT foo, bar"
++ " FROM table"
++ " WHERE id = 42";
+
+
+string query = @"SELECT foo, bar
+FROM table
+WHERE id = 42";
