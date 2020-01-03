@@ -1,0 +1,66 @@
+https://stackoverflow.com/questions/4009013/call-one-constructor-from-another
+
+I have two constructors which feed values to readonly fields.
+
+public class Sample
+{
+    public Sample(string theIntAsString)
+    {
+        int i = int.Parse(theIntAsString);
+        _intField = i;
+    }
+
+    public Sample(int theInt) => _intField = theInt;
+    public int IntProperty    => _intField;
+
+    private readonly int _intField;
+}
+One constructor receives the values directly, and the other does some calculation and obtains the values, then sets the fields.
+
+Now here's the catch:
+
+I don't want to duplicate the setting code. In this case, just one field is set but of course there may well be more than one.
+To make the fields readonly, I need to set them from the constructor, so I can't "extract" the shared code to a utility function.
+I don't know how to call one constructor from another.
+Any ideas?
+
+
+
+
+
+ You can make a static method that manipulates the parameters.
+
+ I know the execution order of this one? 
+ Everything in Sample(string) will be executed first then Sample(int) 
+ or the int version will be executed first then it will get back to the string version? 
+ (Like calling super() in Java?)
+
+ The base class constructor always runs first. 
+ You cannot use or see this until its base class has been initialized. 
+
+ Yes, you can; use ?: or call a static method.
+ Yes. He wanted to run code (on the parameters) before calling the other ctor. At that point, there is no instance. 
+ 
+public Sample(string str) : this(int.Parse(str)) { }
+
+
+
+
+If what you want can't be achieved satisfactorily without having the initialization in its own method (e.g. because you want to do too much before the initialization code, or wrap it in a try-finally, or whatever) you can have any or all constructors pass the readonly variables by reference to an initialization routine, which will then be able to manipulate them at will.
+
+public class Sample
+{
+    private readonly int _intField;
+    public int IntProperty => _intField; 
+
+    private void setupStuff(ref int intField, int newValue) => intField = newValue;
+
+    public Sample(string theIntAsString)
+    {
+        int i = int.Parse(theIntAsString);
+        setupStuff(ref _intField,i);
+    }
+
+    public Sample(int theInt) => setupStuff(ref _intField, theInt);
+}
+
