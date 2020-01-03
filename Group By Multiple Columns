@@ -1,0 +1,43 @@
+https://stackoverflow.com/questions/847066/group-by-multiple-columns
+
+How can I do GroupBy Multiple Columns in LINQ
+
+Something similar to this in SQL:
+
+SELECT * FROM <TableName> GROUP BY <Column1>,<Column2>
+How can I convert this to LINQ:
+
+QuantityBreakdown
+(
+    MaterialID int,
+    ProductID int,
+    Quantity float
+)
+
+INSERT INTO @QuantityBreakdown (MaterialID, ProductID, Quantity)
+SELECT MaterialID, ProductID, SUM(Quantity)
+FROM @Transactions
+GROUP BY MaterialID, ProductID
+
+
+.GroupBy(x => new { x.Column1, x.Column2 })
+
+var query = (from t in Transactions
+             group t by new {t.MaterialID, t.ProductID}
+             into grp
+                    select new
+                    {
+                        grp.Key.MaterialID,
+                        grp.Key.ProductID,
+                        Quantity = grp.Sum(t => t.Quantity)
+                    }).ToList();
+                    
+GroupBy(x=> new { x.Column1, x.Column2 }, (key, group) => new 
+{ 
+  Key1 = key.Column1,
+  Key2 = key.Column2,
+  Result = group.ToList() 
+});
+
+
+
