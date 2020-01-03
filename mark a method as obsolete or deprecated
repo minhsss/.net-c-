@@ -1,0 +1,11 @@
+https://stackoverflow.com/questions/1759352/how-to-mark-a-method-as-obsolete-or-deprecated
+
+
+The shortest way is by adding the ObsoleteAttribute as an attribute to the method. Make sure to include an appropriate explanation:
+
+[Obsolete("Method1 is deprecated, please use Method2 instead.")]
+public void Method1()
+{ … }
+You can also cause the compilation to fail, treating the usage of the method as an error instead of warning, if the method is called from somewhere in code like this:
+
+[Obsolete("Method1 is deprecated, please use Method2 instead.", true)]
