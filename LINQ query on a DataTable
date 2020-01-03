@@ -1,0 +1,17 @@
+https://stackoverflow.com/questions/10855/linq-query-on-a-datatable
+
+You can't query against the DataTable's Rows collection, since DataRowCollection doesn't implement IEnumerable<T>.
+You need to use the AsEnumerable() extension for DataTable. Like so:
+
+var results = from myRow in myDataTable.AsEnumerable()
+where myRow.Field<int>("RowNo") == 1
+select myRow;
+And as Keith says, you'll need to add a reference to System.Data.DataSetExtensions
+
+AsEnumerable() returns IEnumerable<DataRow>. If you need to convert IEnumerable<DataRow> to a DataTable, use the CopyToDataTable() extension.
+
+Below is query with Lambda Expression,
+
+var result = myDataTable
+    .AsEnumerable()
+    .Where(myRow => myRow.Field<int>("RowNo") == 1);
