@@ -1,0 +1,97 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace TestExcel_2
+{
+    public partial class GopNhieuFIleExel : Form
+    {
+        string[] files;
+        string[] dirs;
+
+        public GopNhieuFIleExel()
+        {
+            InitializeComponent();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog FBD = new FolderBrowserDialog();
+
+            if (FBD.ShowDialog() == DialogResult.OK)
+            {
+                listBox1.Items.Clear();
+                files = Directory.GetFiles(FBD.SelectedPath);
+                dirs = Directory.GetDirectories(FBD.SelectedPath);
+
+                foreach (string file in files)
+                {
+                    listBox1.Items.Add(file);
+                }
+                foreach (string dir in dirs)
+                {
+                    listBox1.Items.Add(dirs);
+                }
+            }
+        }
+
+
+        public void Main()
+        {
+
+            DateTime _date = DateTime.Now;
+            var _dateString = _date.ToString("dd-MM-yyyy-hh-mm-ss");
+
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string filePath2 = path +"\\"+"ketqua.csv";
+
+            if (File.Exists(filePath2))
+            {
+                // Xóa file
+                File.Delete(filePath2);
+
+                // Kiểm tra lại xem file còn tồn tại không.
+                if (!File.Exists(filePath2))
+                {
+                    Console.WriteLine("File deleted...");
+                }
+
+            }
+            //using (StreamWriter writer = new StreamWriter(filePath2 + "ketqua.csv"))
+            using (StreamWriter writer = new StreamWriter(new FileStream(filePath2, FileMode.Create, FileAccess.Write)))
+            {
+                for (int i = 0; i < files.Length; i++)
+                {
+                    using (StreamReader reader = File.OpenText(files[i]))
+                    {
+                        writer.Write(reader.ReadToEnd());
+                    }
+                }
+                MessageBox.Show("Đã gộp file thành công", "Thông Báo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Main();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+    }
+}
