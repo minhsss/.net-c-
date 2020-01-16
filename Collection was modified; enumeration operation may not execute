@@ -1,0 +1,77 @@
+https://stackoverflow.com/questions/604831/collection-was-modified-enumeration-operation-may-not-execute
+
+I can't get to the bottom of this error, because when the debugger is attached, it does not seem to occur. Below is the code.
+
+This is a WCF server in a Windows service. The method NotifySubscribers is called by the service whenever there is a data event (at random intervals, but not very often - about 800 times per day).
+
+When a Windows Forms client subscribes, the subscriber ID is added to the subscribers dictionary, and when the client unsubscribes, it is deleted from the dictionary. The error happens when (or after) a client unsubscribes. It appears that the next time the NotifySubscribers() method is called, the foreach() loop fails with the error in the subject line. The method writes the error into the application log as shown in the code below. When a debugger is attached and a client unsubscribes, the code executes fine.
+
+Do you see a problem with this code? Do I need to make the dictionary thread-safe?
+
+[ServiceBehavior(InstanceContextMode=InstanceContextMode.Single)]
+public class SubscriptionServer : ISubscriptionServer
+{
+    private static IDictionary<Guid, Subscriber> subscribers;
+
+    public SubscriptionServer()
+    {            
+        subscribers = new Dictionary<Guid, Subscriber>();
+    }
+
+    public void NotifySubscribers(DataRecord sr)
+    {
+        foreach(Subscriber s in subscribers.Values)
+        {
+            try
+            {
+                s.Callback.SignalData(sr);
+            }
+            catch (Exception e)
+            {
+                DCS.WriteToApplicationLog(e.Message, 
+                  System.Diagnostics.EventLogEntryType.Error);
+
+                UnsubscribeEvent(s.ClientId);
+            }
+        }
+    }
+
+
+    public Guid SubscribeEvent(string clientDescription)
+    {
+        Subscriber subscriber = new Subscriber();
+        subscriber.Callback = OperationContext.Current.
+                GetCallbackChannel<IDCSCallback>();
+
+        subscribers.Add(subscriber.ClientId, subscriber);
+
+        return subscriber.ClientId;
+    }
+
+
+    public void UnsubscribeEvent(Guid clientId)
+    {
+        try
+        {
+            subscribers.Remove(clientId);
+        }
+        catch(Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine("Unsubscribe Error " + 
+                    e.Message);
+        }
+    }
+}
+
+
+What's likely happening is that SignalData is indirectly changing the subscribers dictionary under the hood during the loop and leading to that message. You can verify this by changing
+
+foreach(Subscriber s in subscribers.Values)
+To
+
+foreach(Subscriber s in subscribers.Values.ToList())
+If I'm right, the problem will dissapear
+
+Calling subscribers.Values.ToList() copies the values of subscribers.Values to a separate list at the start of the foreach. Nothing else has access to this list (it doesn't even have a variable name!), so nothing can modify it inside the loop.
+
+shareedit
