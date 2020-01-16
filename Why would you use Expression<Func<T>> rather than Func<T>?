@@ -1,0 +1,25 @@
+
+
+When you want to treat lambda expressions as expression trees and look inside them
+instead of executing them. For example, LINQ to SQL gets the expression 
+and converts it to the equivalent SQL statement and submits it to server
+(rather than executing the lambda).
+
+Conceptually, Expression<Func<T>> is completely different from Func<T>. 
+Func<T> denotes a delegate which is pretty much a pointer to a method and 
+Expression<Func<T>> denotes a tree data structure for a lambda expression.
+This tree structure describes what a lambda expression does rather than doing the actual
+thing. It basically holds data about the 
+composition of expressions, variables, method calls, ... 
+(for example it holds information such as this lambda is some constant + some parameter).
+You can use this description to convert it to an actual method (with Expression.Compile)
+or do other stuff (like the LINQ to SQL example) with it.
+The act of treating lambdas as anonymous methods and expression trees is purely
+a compile time thing.
+
+Func<int> myFunc = () => 10; // similar to: int myAnonMethod() { return 10; }
+will effectively compile to an IL method that gets nothing and returns 10.
+
+Expression<Func<int>> myExpression = () => 10;
+will be converted to a data structure that describes an expression 
+that gets no parameters and returns the value 10:
