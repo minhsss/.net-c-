@@ -1,0 +1,11 @@
+https://stackoverflow.com/questions/837488/how-can-i-get-the-applications-path-in-a-net-console-application
+System.Reflection.Assembly.GetExecutingAssembly().Location1
+
+Combine that with System.IO.Path.GetDirectoryName if all you want is the directory.
+
+System.Reflection.Assembly.GetExecutingAssembly().Location 
+returns where the executing assembly is currently located,
+which may or may not be where the assembly is located when not executing.
+In the case of shadow copying assemblies, you will get a path in a temp directory.
+System.Reflection.Assembly.GetExecutingAssembly().
+CodeBase will return the 'permanent' path of the assembly.
